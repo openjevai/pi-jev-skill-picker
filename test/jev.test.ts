@@ -247,7 +247,7 @@ test("rankSkills without an API key fails before any request", async () => {
 	const config = loadConfig({}, () => "{}");
 	let called = false;
 	const fakeFetch = (async () => { called = true; return new Response("{}"); }) as unknown as typeof fetch;
-	await assert.rejects(() => rankSkills("t", [skill("a", "")], config, 3, undefined, fakeFetch), /No TypeSafe API key/);
+	await assert.rejects(() => rankSkills("t", [skill("a", "")], config, 3, undefined, fakeFetch), /No Jev API key/);
 	assert.equal(called, false);
 });
 

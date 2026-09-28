@@ -157,7 +157,7 @@ export default function (pi: ExtensionAPI) {
 		name: "skill_search",
 		label: "Skill Search",
 		description:
-			"Rate every enabled Agent Skill against the current task with TypeSafe's Jev and load the full instructions of the ones that actually apply. Describe the task in plain language; do not guess skill names.",
+			"Rate every enabled Agent Skill against the current task with Jev and load the full instructions of the ones that actually apply. Describe the task in plain language; do not guess skill names.",
 		promptSnippet: "Find and load the Agent Skills that apply to the current task",
 		promptGuidelines: [
 			"The Agent Skills catalog is intentionally omitted from this prompt. Before substantive work where a specialized workflow, private CLI or house convention may exist, call skill_search once with a plain-language description of the task. It returns the complete instructions of any skill that applies, or says that none do.",
@@ -202,7 +202,7 @@ export default function (pi: ExtensionAPI) {
 				const matches = lexicalMatches(enabledSkills, task, limit);
 				const reason = config.apiKey
 					? `Jev was unreachable (${error.message})`
-					: `No TypeSafe API key is configured (set TYPESAFE_API_KEY or add "apiKey" to ${configPath()})`;
+					: `No Jev API key is configured (set TYPESAFE_API_KEY for TypeSafe, OPENJEV_API_KEY for OpenJEV, or add "apiKey" to ${configPath()})`;
 				if (!matches.length) {
 					return {
 						content: [

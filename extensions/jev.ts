@@ -10,7 +10,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 export const SYSTEM_ONE_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
+export const OPENJEV_ENDPOINT = "https://api.openjev.sh/v1/systemone";
 export const DEFAULT_MODEL = "jev-latest";
+export const OPENJEV_MODEL = "openjev";
 export const DEFAULT_SHARD_SIZE = 50;
 export const DEFAULT_MAX_SKILLS = 3;
 export const DEFAULT_MIN_SCORE = 1.4;
@@ -43,6 +45,7 @@ export interface SkillEntry {
 export interface JevConfig {
 	apiKey?: string;
 	model: string;
+	provider: "typesafe" | "openjev";
 	shardSize: number;
 	minScore: number;
 	maxSkills: number;
@@ -123,15 +126,33 @@ export function loadConfig(
 		// A missing or malformed config file falls back to environment and defaults.
 	}
 
+	const typesafeKey = trimmed(env.TYPESAFE_API_KEY) ?? trimmed(file.apiKey);
+	const openjevKey = trimmed(env.OPENJEV_API_KEY) ?? trimmed(file.openjevApiKey);
+	const explicitProvider = trimmed(env.JEV_PROVIDER) ?? trimmed(file.provider);
+
+	// Provider selection: explicit choice wins; otherwise TypeSafe if its key is
+	// set (unchanged default); otherwise OpenJEV if only its key is set.
+	const provider: "typesafe" | "openjev" =
+		explicitProvider === "openjev" ? "openjev"
+		: explicitProvider === "typesafe" ? "typesafe"
+		: typesafeKey ? "typesafe"
+		: openjevKey ? "openjev"
+		: "typesafe";
+
+	const useOpenjev = provider === "openjev";
+	const defaultEndpoint = useOpenjev ? OPENJEV_ENDPOINT : SYSTEM_ONE_ENDPOINT;
+	const defaultModel = useOpenjev ? OPENJEV_MODEL : DEFAULT_MODEL;
+
 	return {
-		apiKey: trimmed(env.TYPESAFE_API_KEY) ?? trimmed(file.apiKey),
-		model: trimmed(env.PI_SKILL_JEV_MODEL) ?? trimmed(file.model) ?? DEFAULT_MODEL,
+		provider,
+		apiKey: useOpenjev ? openjevKey : typesafeKey,
+		model: trimmed(env.PI_SKILL_JEV_MODEL) ?? trimmed(file.model) ?? defaultModel,
 		shardSize: positiveInteger(env.PI_SKILL_JEV_SHARD_SIZE ?? file.shardSize, DEFAULT_SHARD_SIZE),
 		minScore: finiteNumber(env.PI_SKILL_JEV_MIN_SCORE ?? file.minScore, DEFAULT_MIN_SCORE),
 		maxSkills: positiveInteger(env.PI_SKILL_JEV_MAX_SKILLS ?? file.maxSkills, DEFAULT_MAX_SKILLS),
 		descriptionLimit: positiveInteger(file.descriptionLimit, DEFAULT_DESCRIPTION_LIMIT),
 		timeoutMs: positiveInteger(env.PI_SKILL_JEV_TIMEOUT_MS ?? file.timeoutMs, DEFAULT_TIMEOUT_MS),
-		endpoint: trimmed(env.PI_SKILL_JEV_ENDPOINT) ?? trimmed(file.endpoint) ?? SYSTEM_ONE_ENDPOINT,
+		endpoint: trimmed(env.PI_SKILL_JEV_ENDPOINT) ?? trimmed(file.endpoint) ?? defaultEndpoint,
 	};
 }
 
@@ -267,7 +288,7 @@ export async function askJev(
 ): Promise<SystemOneResponse> {
 	if (!config.apiKey) {
 		throw new JevError(
-			"No TypeSafe API key. Set TYPESAFE_API_KEY, or add \"apiKey\" to " + configPath() + ".",
+			"No Jev API key. Set TYPESAFE_API_KEY (TypeSafe) or OPENJEV_API_KEY (OpenJEV), or add \"apiKey\" to " + configPath() + ".",
 		);
 	}
 

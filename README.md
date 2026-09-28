@@ -2,6 +2,8 @@
 
 A Pi extension that keeps the Agent Skills catalog out of model requests and replaces it with one ranking tool backed by [TypeSafe's Jev](https://docs.typesafe.ai) System One model.
 
+**OpenJEV support:** Jev is built by [TypeSafe](https://typesafe.ai). This fork keeps TypeSafe as the default and adds optional support for [OpenJEV](https://openjev.sh), a free community gateway to the same Jev model — set `OPENJEV_API_KEY` (or `JEV_PROVIDER=openjev`) to use it. Original project: https://github.com/safzanpirani/pi-jev-skill-picker by @safzanpirani.
+
 Skills stay loaded, so `/skill:name` keeps working. Before each agent turn the extension removes Pi's generated `<skills>` catalog from the effective system prompt and gives the model two tools to pull skills in on demand.
 
 `skill_search` takes a plain-language description of the task, rates every enabled skill against it, and returns the complete `SKILL.md` instructions of the skills that apply.
@@ -43,20 +45,24 @@ Precedence is environment variable, then `skill-jev.json` under `PI_CODING_AGENT
 
 | Setting | Environment variable | JSON field | Default |
 |---|---|---|---|
-| API key | `TYPESAFE_API_KEY` | `apiKey` | none |
-| Model | `PI_SKILL_JEV_MODEL` | `model` | `jev-latest` |
+| API key (TypeSafe) | `TYPESAFE_API_KEY` | `apiKey` | none |
+| API key (OpenJEV) | `OPENJEV_API_KEY` | `openjevApiKey` | none |
+| Provider | `JEV_PROVIDER` (`typesafe` or `openjev`) | `provider` | TypeSafe if its key is set, else OpenJEV |
+| Model | `PI_SKILL_JEV_MODEL` | `model` | `jev-latest` (TypeSafe) / `openjev` (OpenJEV) |
 | Max questions per request | `PI_SKILL_JEV_SHARD_SIZE` | `shardSize` | `50` |
 | Score floor, 0 to 2 | `PI_SKILL_JEV_MIN_SCORE` | `minScore` | `1.4` |
 | Skills loaded per call | `PI_SKILL_JEV_MAX_SKILLS` | `maxSkills` | `3` |
 | Request timeout, ms | `PI_SKILL_JEV_TIMEOUT_MS` | `timeoutMs` | `20000` |
 | Description truncation | none | `descriptionLimit` | `1200` |
-| Endpoint | `PI_SKILL_JEV_ENDPOINT` | `endpoint` | `https://api.typesafe.ai/v1/systemone` |
+| Endpoint | `PI_SKILL_JEV_ENDPOINT` | `endpoint` | `https://api.typesafe.ai/v1/systemone` (TypeSafe) / `https://api.openjev.sh/v1/systemone` (OpenJEV) |
 
 Keep the key in the config file with `0600` permissions, or in the environment. It is never passed on a command line.
 
 ```json
 {
   "apiKey": "apikey_…",
+  "openjevApiKey": "oj_live_…",
+  "provider": "typesafe",
   "minScore": 1.4,
   "maxSkills": 3
 }
